@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="inHOMEuse">
+  <rect width="32" height="32" rx="7" fill="#FFFFFF"/>
+  <!-- Key bow -->
+  <circle cx="9.5" cy="16" r="7.25" fill="#E30613"/>
+  <circle cx="9.5" cy="16" r="2.85" fill="#FFFFFF"/>
+  <!-- Shaft -->
+  <rect x="15.5" y="14" width="5.5" height="4" fill="#E30613"/>
+  <!-- House bit -->
+  <polygon points="19,12.4 25,5.6 31,12.4 31,26.2 19,26.2" fill="#E30613"/>
+  <!-- Negative-space H -->
+  <path fill="#FFFFFF" d="M20.9 14.4h2.85v3.35h2.5V14.4H29.1v9.7h-2.85v-3.35h-2.5v3.35H20.9z"/>
+</svg>
