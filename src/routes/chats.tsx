@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { AppShell } from "@/components/layout/app-shell";
 import { listConversations } from "@/lib/server/chats";
 import type { Conversation } from "@/lib/types";
@@ -10,14 +10,17 @@ import { RedirectToSignIn } from "@/lib/auth/gates";
 export const Route = createFileRoute("/chats")({ component: ChatsPage });
 
 function ChatsPage() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { lang } = useI18n();
   const { user, isPending } = useCurrentUserState();
   const [items, setItems] = useState<Conversation[]>([]);
 
   useEffect(() => {
-    if (!user) return;
+    if (pathname !== "/chats" || !user) return;
     void listConversations().then(setItems).catch(() => setItems([]));
-  }, [user]);
+  }, [user, pathname]);
+
+  if (pathname !== "/chats") return <Outlet />;
 
   if (isPending) {
     return (

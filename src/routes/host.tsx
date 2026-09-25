@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { AppShell } from "@/components/layout/app-shell";
 import { ListingCard } from "@/components/listings/listing-card";
 import { Button } from "@/components/ui/button";
@@ -13,18 +13,21 @@ import { RedirectToSignIn } from "@/lib/auth/gates";
 export const Route = createFileRoute("/host")({ component: HostPage });
 
 function HostPage() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { lang } = useI18n();
   const { user, isPending } = useCurrentUserState();
   const [listings, setListings] = useState<Listing[]>([]);
   const [apps, setApps] = useState<Application[]>([]);
 
   useEffect(() => {
-    if (!user) return;
+    if (pathname !== "/host" || !user) return;
     void listMyListings().then(setListings).catch(() => setListings([]));
     void listMyApplications()
       .then((rows) => setApps(rows.filter((a) => a.landlord_id === user.id)))
       .catch(() => setApps([]));
-  }, [user]);
+  }, [user, pathname]);
+
+  if (pathname !== "/host") return <Outlet />;
 
   if (isPending) {
     return (
