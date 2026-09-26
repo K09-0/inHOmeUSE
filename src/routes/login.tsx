@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { GROK_PROVIDERS, authClient, authEnabled, signIn } from "@/lib/auth/client";
 import { Wordmark } from "@/components/brand/logo";
@@ -17,6 +17,12 @@ function Login() {
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [showSocial, setShowSocial] = useState(false);
+
+  useEffect(() => {
+    const host = window.location.hostname;
+    setShowSocial(host === "localhost" || host.endsWith("grok-sandbox.com"));
+  }, []);
 
   async function onEmail(e: FormEvent) {
     e.preventDefault();
@@ -52,7 +58,8 @@ function Login() {
 
         {authEnabled ? (
           <div className="mt-6 space-y-3">
-            {GROK_PROVIDERS.map((p) => (
+            {showSocial &&
+              GROK_PROVIDERS.map((p) => (
               <Button
                 key={p.providerId}
                 type="button"
@@ -63,7 +70,9 @@ function Login() {
                 {p.providerId.includes("google") ? t(lang, "continueGoogle") : t(lang, "continueX")}
               </Button>
             ))}
-            <p className="pt-2 text-center text-xs uppercase tracking-[0.18em] text-muted">{t(lang, "orEmail")}</p>
+            {showSocial && (
+              <p className="pt-2 text-center text-xs uppercase tracking-[0.18em] text-muted">{t(lang, "orEmail")}</p>
+            )}
             <form className="space-y-3" onSubmit={onEmail}>
               {mode === "up" && (
                 <div>
