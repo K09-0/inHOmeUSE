@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { cityLabelFromGeo, districtLabel as districtLabelFromGeo } from "@/lib/geo/kz";
 
 export type Lang = "kk" | "ru" | "en";
 
@@ -174,12 +175,20 @@ const dict = {
   view: { kk: "Ашу", ru: "Открыть", en: "Open" },
   perMonth: { kk: "/ ай", ru: "/ мес", en: "/ mo" },
   kidsOk: { kk: "Балаларға болады", ru: "Можно с детьми", en: "Kids welcome" },
-  photos: { kk: "Фото сілтемелері", ru: "Ссылки на фото", en: "Photo URLs" },
+  photos: { kk: "Фото", ru: "Фото", en: "Photos" },
   photosHint: {
-    kk: "Үтірмен бөлінген URL",
-    ru: "URL через запятую",
-    en: "Comma-separated URLs",
+    kk: "Телефоннан немесе компьютерден 8 фотоға дейін",
+    ru: "До 8 фото с телефона или компьютера",
+    en: "Up to 8 photos from your phone or computer",
   },
+  addPhotos: { kk: "Фото қосу", ru: "Добавить фото", en: "Add photos" },
+  mainPhoto: { kk: "Басты", ru: "Главное", en: "Cover" },
+  makeMain: { kk: "Басты ету", ru: "Сделать главным", en: "Set as cover" },
+  removePhoto: { kk: "Өшіру", ru: "Удалить", en: "Remove" },
+  photoError: { kk: "Фото оқылмады", ru: "Не удалось прочитать фото", en: "Could not read the photo" },
+  needPhoto: { kk: "Кемінде бір фото қосыңыз", ru: "Добавьте хотя бы одно фото", en: "Add at least one photo" },
+  region: { kk: "Өңір", ru: "Регион", en: "Region" },
+  allDistricts: { kk: "Барлық аудан", ru: "Все районы", en: "All districts" },
   published: { kk: "Жарияланды", ru: "Опубликовано", en: "Published" },
   language: { kk: "Тіл", ru: "Язык", en: "Language" },
   kaspiTitle: { kk: "Kaspi Pay", ru: "Kaspi Pay", en: "Kaspi Pay" },
@@ -236,9 +245,9 @@ export const LANGS: { id: Lang; label: string }[] = [
 ];
 
 export function cityLabel(lang: Lang, city: string): string {
-  const key = city.toLowerCase();
-  if (key === "almaty") return t(lang, "almaty");
-  if (key === "astana") return t(lang, "astana");
-  if (key === "shymkent") return t(lang, "shymkent");
-  return city;
+  return cityLabelFromGeo(lang, city);
+}
+
+export function districtLabel(lang: Lang, city: string, district: string): string {
+  return districtLabelFromGeo(lang, city, district);
 }

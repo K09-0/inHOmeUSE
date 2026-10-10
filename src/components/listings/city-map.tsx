@@ -1,15 +1,18 @@
 import { useMemo } from "react";
 import type { Listing } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { findCity } from "@/lib/geo/kz";
+import { cityLabel, useI18n } from "@/lib/i18n";
 
-const BOUNDS: Record<string, { minLat: number; maxLat: number; minLng: number; maxLng: number }> = {
-  Almaty: { minLat: 43.17, maxLat: 43.28, minLng: 76.84, maxLng: 77.02 },
-  Astana: { minLat: 51.08, maxLat: 51.18, minLng: 71.35, maxLng: 71.52 },
-  Shymkent: { minLat: 42.28, maxLat: 42.38, minLng: 69.52, maxLng: 69.68 },
-};
+function bounds(city: string) {
+  const place = findCity(city);
+  const lat = place?.lat ?? 43.238;
+  const lng = place?.lng ?? 76.945;
+  return { minLat: lat - 0.09, maxLat: lat + 0.09, minLng: lng - 0.12, maxLng: lng + 0.12 };
+}
 
 function project(listing: Listing, city: string) {
-  const b = BOUNDS[city] ?? BOUNDS.Almaty;
+  const b = bounds(city);
   const x = ((listing.lng - b.minLng) / (b.maxLng - b.minLng)) * 100;
   const y = (1 - (listing.lat - b.minLat) / (b.maxLat - b.minLat)) * 100;
   return { x: Math.min(92, Math.max(8, x)), y: Math.min(88, Math.max(10, y)) };
@@ -26,6 +29,7 @@ export function CityMap({
   activeId?: number | null;
   onSelect?: (id: number) => void;
 }) {
+  const { lang } = useI18n();
   const pins = useMemo(
     () => listings.filter((l) => (city === "all" ? true : l.city === city)),
     [listings, city],
@@ -82,7 +86,7 @@ export function CityMap({
         );
       })}
       <p className="absolute left-4 top-4 rounded-full bg-surface/85 px-3 py-1 text-xs font-medium uppercase tracking-[0.16em] text-muted backdrop-blur-md">
-        {mapCity}
+        {cityLabel(lang, mapCity)}
       </p>
     </div>
   );

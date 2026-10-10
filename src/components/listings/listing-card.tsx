@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { Heart } from "lucide-react";
 import type { Listing } from "@/lib/types";
 import { cn, formatKzt } from "@/lib/utils";
-import { cityLabel, t, type Lang } from "@/lib/i18n";
+import { cityLabel, districtLabel, t, type Lang } from "@/lib/i18n";
 import { TrustLock } from "./trust-lock";
 
 export function ListingCard({
@@ -33,7 +33,7 @@ export function ListingCard({
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink/55 via-ink/0 to-transparent" />
           <div className="absolute left-3 top-3 flex max-w-[70%] flex-wrap gap-1">
             <span className="truncate rounded-full bg-surface/90 px-3 py-1 text-xs font-medium text-fg backdrop-blur-md">
-              {cityLabel(lang, listing.city)} · {listing.district}
+              {cityLabel(lang, listing.city)} · {districtLabel(lang, listing.city, listing.district)}
             </span>
             <span className="shrink-0 rounded-full bg-primary px-2.5 py-1 text-xs font-semibold text-primary-fg tabular-nums">
               {formatKzt(listing.price_kzt)}

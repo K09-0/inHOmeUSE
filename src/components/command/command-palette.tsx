@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Command } from "cmdk";
 import { useNavigate } from "@tanstack/react-router";
-import { t, useI18n } from "@/lib/i18n";
+import { cityLabel, t, useI18n } from "@/lib/i18n";
 import type { Listing } from "@/lib/types";
 
 export function CommandPalette({ listings }: { listings: Listing[] }) {
@@ -49,7 +49,7 @@ export function CommandPalette({ listings }: { listings: Listing[] }) {
                 className="flex cursor-pointer items-center justify-between rounded-xl px-3 py-2.5 text-sm data-[selected=true]:bg-primary/8"
               >
                 <span>{listing.title}</span>
-                <span className="text-xs text-muted">{listing.city}</span>
+                <span className="text-xs text-muted">{cityLabel(lang, listing.city)}</span>
               </Command.Item>
             ))}
             <Command.Item value="search" onSelect={() => { setOpen(false); void navigate({ to: "/search" }); }} className="rounded-xl px-3 py-2.5 text-sm data-[selected=true]:bg-primary/8">

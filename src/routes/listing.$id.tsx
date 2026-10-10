@@ -10,7 +10,7 @@ import { getListing, listBookedRanges, listReviews } from "@/lib/server/listings
 import { createApplication } from "@/lib/server/applications";
 import { toggleFavorite } from "@/lib/server/favorites";
 import type { Listing, Review } from "@/lib/types";
-import { cityLabel, t, tMaybe, useI18n } from "@/lib/i18n";
+import { cityLabel, districtLabel, t, tMaybe, useI18n } from "@/lib/i18n";
 import { formatKzt } from "@/lib/utils";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { RedirectToSignIn } from "@/lib/auth/gates";
@@ -97,7 +97,7 @@ function ListingPage() {
           </div>
           <h1 className="mt-6 font-display text-4xl tracking-tight">{listing.title}</h1>
           <p className="mt-2 text-muted">
-            {cityLabel(lang, listing.city)} · {listing.district} · {listing.address}
+            {cityLabel(lang, listing.city)} · {districtLabel(lang, listing.city, listing.district)} · {listing.address}
           </p>
           <p className="mt-4 max-w-2xl leading-relaxed text-fg/90">{listing.description}</p>
           <div className="mt-5 flex flex-wrap gap-2">

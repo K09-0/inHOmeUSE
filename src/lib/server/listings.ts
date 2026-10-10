@@ -4,6 +4,8 @@ import { getSql } from "@/lib/db";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { mapListing, mapReview } from "./mappers";
 import { ensureProfile } from "./profiles";
+import { districtMatchValues, findCity, findDistrict } from "@/lib/geo/kz";
+import { isSafePhoto } from "@/lib/photos";
 
 const listingSelect = `
   l.*,
@@ -25,6 +27,7 @@ export const listListings = createServerFn({ method: "GET" })
       furnished?: boolean;
       pets?: boolean;
       sort?: string;
+      district?: string;
     }) => input ?? {},
   )
   .handler(async ({ data }) => {
@@ -37,6 +40,8 @@ export const listListings = createServerFn({ method: "GET" })
     const furnished = data.furnished ? true : null;
     const pets = data.pets ? true : null;
     const sort = data.sort ?? "newest";
+    const district =
+      data.district && data.district !== "all" && city ? districtMatchValues(city, data.district) : null;
 
     const rows = await sql.query(
       `select ${listingSelect}
@@ -49,11 +54,12 @@ export const listListings = createServerFn({ method: "GET" })
          and l.price_kzt >= $4 and l.price_kzt <= $5
          and ($6::boolean is null or l.furnished = $6)
          and ($7::boolean is null or l.pets_allowed = $7)
+         and ($9::text[] is null or l.district = any($9))
        order by
          case when $8 = 'cheap' then l.price_kzt end asc,
          case when $8 = 'trust' then coalesce(p.trust_score, 0) end desc,
          l.created_at desc`,
-      [city, q, rooms, minPrice, maxPrice, furnished, pets, sort],
+      [city, q, rooms, minPrice, maxPrice, furnished, pets, sort, district],
     );
     return rows.map(mapListing);
   });
@@ -107,7 +113,7 @@ const createListingSchema = z.object({
   title: z.string().min(4).max(120),
   description: z.string().min(10).max(4000),
   city: z.string().min(2).max(40),
-  district: z.string().min(2).max(60),
+  district: z.string().min(2).max(40),
   address: z.string().min(4).max(160),
   lat: z.number(),
   lng: z.number(),
@@ -120,7 +126,7 @@ const createListingSchema = z.object({
   furnished: z.boolean(),
   pets_allowed: z.boolean(),
   kids_allowed: z.boolean(),
-  photos: z.array(z.string()).min(1).max(12),
+  photos: z.array(z.string().min(12).max(450_000).refine(isSafePhoto)).min(1).max(8),
   amenities: z.array(z.string()).max(20),
   available_from: z.string(),
 });
@@ -130,6 +136,8 @@ export const createListing = createServerFn({ method: "POST" })
   .validator((data: z.infer<typeof createListingSchema>) => createListingSchema.parse(data))
   .handler(async ({ context, data }) => {
     await ensureProfile(context.userId, { role: "landlord" });
+    const place = findCity(data.city);
+    if (!place || !findDistrict(place, data.district)) throw new Error("Unknown place");
     const sql = await getSql();
     const rows = await sql.query(
       `insert into listings (

@@ -8,13 +8,14 @@ import { Input } from "@/components/ui/input";
 import { listListings } from "@/lib/server/listings";
 import { favoriteIds, toggleFavorite } from "@/lib/server/favorites";
 import type { Listing } from "@/lib/types";
-import { cityLabel, t, useI18n } from "@/lib/i18n";
+import { cityLabel, districtLabel, t, useI18n } from "@/lib/i18n";
+import { REGIONS, citiesIn, findCity, placeName } from "@/lib/geo/kz";
 import { cn } from "@/lib/utils";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 
 export const Route = createFileRoute("/search")({ component: SearchPage });
 
-const CITIES = ["all", "Almaty", "Astana", "Shymkent"] as const;
+const QUICK = ["all", "Almaty", "Astana", "Shymkent", "Karaganda", "Aktobe"] as const;
 
 function SearchPage() {
   const { lang } = useI18n();
@@ -22,6 +23,7 @@ function SearchPage() {
   const navigate = useNavigate();
   const [q, setQ] = useState("");
   const [city, setCity] = useState<string>("all");
+  const [district, setDistrict] = useState("all");
   const [rooms, setRooms] = useState(0);
   const [sort, setSort] = useState("newest");
   const [listings, setListings] = useState<Listing[]>([]);
@@ -32,13 +34,13 @@ function SearchPage() {
   useEffect(() => {
     const tmr = window.setTimeout(() => {
       void listListings({
-        data: { q, city, rooms, sort },
+        data: { q, city, district, rooms, sort },
       })
         .then(setListings)
         .catch(() => setListings([]));
     }, 180);
     return () => window.clearTimeout(tmr);
-  }, [q, city, rooms, sort]);
+  }, [q, city, district, rooms, sort]);
 
   useEffect(() => {
     if (!user) return;
@@ -63,11 +65,14 @@ function SearchPage() {
       <div className="flex flex-col gap-4">
         <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t(lang, "search")} />
         <div className="flex flex-wrap gap-2">
-          {CITIES.map((c) => (
+          {QUICK.map((c) => (
             <button
               key={c}
               type="button"
-              onClick={() => setCity(c)}
+              onClick={() => {
+                setCity(c);
+                setDistrict("all");
+              }}
               className={cn(
                 "h-10 rounded-full px-4 text-sm font-medium",
                 city === c ? "bg-primary text-primary-fg" : "bg-surface shadow-[var(--shadow-border)]",
@@ -76,6 +81,39 @@ function SearchPage() {
               {c === "all" ? t(lang, "allCities") : cityLabel(lang, c)}
             </button>
           ))}
+          <select
+            value={city}
+            onChange={(e) => {
+              setCity(e.target.value || "all");
+              setDistrict("all");
+            }}
+            className="h-10 max-w-full rounded-full bg-surface px-3 text-sm shadow-[var(--shadow-border)]"
+          >
+            <option value="all">{t(lang, "allCities")}</option>
+            {REGIONS.map((region) => (
+              <optgroup key={region.id} label={placeName(lang, region)}>
+                {citiesIn(region.id).map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {placeName(lang, item)}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+          {city !== "all" && (
+            <select
+              value={district}
+              onChange={(e) => setDistrict(e.target.value)}
+              className="h-10 rounded-full bg-surface px-3 text-sm shadow-[var(--shadow-border)]"
+            >
+              <option value="all">{t(lang, "allDistricts")}</option>
+              {(findCity(city)?.districts ?? []).map((item) => (
+                <option key={item.id} value={item.id}>
+                  {districtLabel(lang, city, item.id)}
+                </option>
+              ))}
+            </select>
+          )}
           {[0, 1, 2, 3].map((r) => (
             <button
               key={r}

@@ -9,6 +9,7 @@ import { LanguageSwitcher } from "@/components/lang/language-switcher";
 import { getMyProfile, updateMyProfile, verifyMyProfile } from "@/lib/server/profiles";
 import type { Profile } from "@/lib/types";
 import { t, useI18n } from "@/lib/i18n";
+import { CITIES, placeName } from "@/lib/geo/kz";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { RedirectToSignIn } from "@/lib/auth/gates";
 
@@ -118,9 +119,14 @@ function ProfilePage() {
             value={profile.city}
             onChange={(e) => setProfile({ ...profile, city: e.target.value })}
           >
-            <option value="Almaty">Almaty</option>
-            <option value="Astana">Astana</option>
-            <option value="Shymkent">Shymkent</option>
+            {profile.city && !CITIES.some((item) => item.id === profile.city) && (
+              <option value={profile.city}>{profile.city}</option>
+            )}
+            {CITIES.map((item) => (
+              <option key={item.id} value={item.id}>
+                {placeName(lang, item)}
+              </option>
+            ))}
           </select>
         </div>
         <div>

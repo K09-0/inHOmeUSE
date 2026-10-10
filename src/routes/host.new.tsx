@@ -4,18 +4,14 @@ import { AppShell } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { PhotoPicker } from "@/components/listings/photo-picker";
 import { createListing } from "@/lib/server/listings";
 import { t, useI18n } from "@/lib/i18n";
+import { CITIES, REGIONS, citiesIn, placeName } from "@/lib/geo/kz";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { RedirectToSignIn } from "@/lib/auth/gates";
 
 export const Route = createFileRoute("/host/new")({ component: NewListing });
-
-const CITY_COORDS: Record<string, { lat: number; lng: number }> = {
-  Almaty: { lat: 43.238, lng: 76.945 },
-  Astana: { lat: 51.128, lng: 71.43 },
-  Shymkent: { lat: 42.32, lng: 69.59 },
-};
 
 function NewListing() {
   const { lang } = useI18n();
@@ -26,8 +22,9 @@ function NewListing() {
   const [form, setForm] = useState({
     title: "",
     description: "",
+    region: "almaty-city",
     city: "Almaty",
-    district: "",
+    district: "Almaly",
     address: "",
     rooms: 2,
     area_m2: 60,
@@ -38,8 +35,8 @@ function NewListing() {
     furnished: true,
     pets_allowed: false,
     kids_allowed: true,
-    photos: "",
-    available_from: "2026-09-01",
+    photos: [] as string[],
+    available_from: "2026-10-01",
   });
 
   if (isPending) {
@@ -55,19 +52,34 @@ function NewListing() {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
+  const cities = citiesIn(form.region);
+  const place = CITIES.find((item) => item.id === form.city) ?? cities[0];
+
+  function onRegion(region: string) {
+    const next = citiesIn(region)[0];
+    setForm((prev) => ({
+      ...prev,
+      region,
+      city: next?.id ?? prev.city,
+      district: next?.districts[0]?.id ?? prev.district,
+    }));
+  }
+
+  function onCity(cityId: string) {
+    const next = CITIES.find((item) => item.id === cityId);
+    setForm((prev) => ({ ...prev, city: cityId, district: next?.districts[0]?.id ?? prev.district }));
+  }
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
+    if (form.photos.length === 0) {
+      setError(t(lang, "needPhoto"));
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
-      const coords = CITY_COORDS[form.city] ?? CITY_COORDS.Almaty;
-      const photos = form.photos
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean);
-      const fallback = [
-        "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1400&q=80",
-      ];
+      const coords = place ?? CITIES[0]!;
       const res = await createListing({
         data: {
           title: form.title,
@@ -86,7 +98,7 @@ function NewListing() {
           furnished: form.furnished,
           pets_allowed: form.pets_allowed,
           kids_allowed: form.kids_allowed,
-          photos: photos.length ? photos : fallback,
+          photos: form.photos,
           amenities: ["wifi", "washer"],
           available_from: form.available_from,
         },
@@ -98,6 +110,8 @@ function NewListing() {
       setBusy(false);
     }
   }
+
+  const selectClass = "h-11 w-full rounded-xl bg-surface px-3 shadow-[var(--shadow-border)]";
 
   return (
     <AppShell>
@@ -111,22 +125,36 @@ function NewListing() {
           <Label>{t(lang, "description")}</Label>
           <Textarea value={form.description} onChange={(e) => set("description", e.target.value)} required minLength={10} />
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div>
+            <Label>{t(lang, "region")}</Label>
+            <select className={selectClass} value={form.region} onChange={(e) => onRegion(e.target.value)}>
+              {REGIONS.map((region) => (
+                <option key={region.id} value={region.id}>
+                  {placeName(lang, region)}
+                </option>
+              ))}
+            </select>
+          </div>
           <div>
             <Label>{t(lang, "city")}</Label>
-            <select
-              className="h-11 w-full rounded-xl bg-surface px-3 shadow-[var(--shadow-border)]"
-              value={form.city}
-              onChange={(e) => set("city", e.target.value)}
-            >
-              <option>Almaty</option>
-              <option>Astana</option>
-              <option>Shymkent</option>
+            <select className={selectClass} value={form.city} onChange={(e) => onCity(e.target.value)}>
+              {cities.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {placeName(lang, item)}
+                </option>
+              ))}
             </select>
           </div>
           <div>
             <Label>{t(lang, "district")}</Label>
-            <Input value={form.district} onChange={(e) => set("district", e.target.value)} required />
+            <select className={selectClass} value={form.district} onChange={(e) => set("district", e.target.value)}>
+              {(place?.districts ?? []).map((item) => (
+                <option key={item.id} value={item.id}>
+                  {placeName(lang, item)}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
         <div>
@@ -151,10 +179,7 @@ function NewListing() {
             <Input type="number" value={form.price_kzt} onChange={(e) => set("price_kzt", Number(e.target.value))} />
           </div>
         </div>
-        <div>
-          <Label>{t(lang, "photos")}</Label>
-          <Input value={form.photos} onChange={(e) => set("photos", e.target.value)} placeholder={t(lang, "photosHint")} />
-        </div>
+        <PhotoPicker lang={lang} photos={form.photos} onChange={(photos) => set("photos", photos)} />
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={form.furnished} onChange={(e) => set("furnished", e.target.checked)} />
           {t(lang, "furnished")}
